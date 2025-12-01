@@ -10,8 +10,8 @@ fun main() {
         part1 { input ->
             var pos = 50
             input.lines.count { line ->
-                val (direction, distance) = parseDirectionAndDistance(line)
-                pos += direction * distance
+                val (dir, dist) = line.toDirectionAndDistance()
+                pos += dir * dist
                 pos %= 100
                 pos == 0
             }
@@ -24,9 +24,9 @@ fun main() {
         part2 { input ->
             var pos = 50
             input.lines.sumOf { line ->
-                val (direction, distance) = parseDirectionAndDistance(line)
-                (1..distance).count {
-                    pos += direction
+                val (dir, dist) = line.toDirectionAndDistance()
+                (1..dist).count {
+                    pos += dir
                     pos %= 100
                     pos == 0
                 }
@@ -39,13 +39,8 @@ fun main() {
     }
 }
 
-private fun parseDirectionAndDistance(line: String): Pair<Int, Int> =
+private fun String.toDirectionAndDistance(): Pair<Int, Int> =
     Pair(
-        line.first().let {
-            when (it) {
-                'L' -> -1
-                else -> 1
-            }
-        },
-        line.drop(1).toInt(),
+        first().let { if (it == 'L') -1 else 1 },
+        drop(1).toInt(),
     )
