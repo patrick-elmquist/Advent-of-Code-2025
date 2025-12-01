@@ -5,6 +5,7 @@ build/
 *.iws
 out/
 .idea_modules/
+.idea/copilot.data.migration.*
 .gradle
 /local.properties
 .DS_Store
