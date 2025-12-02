@@ -13,15 +13,14 @@ fun main() {
     day(n = 2) {
         part1 { input ->
             input.toRanges().sumOf { range ->
-                range
-                    .sumOf { number ->
-                        val string = number.toString()
-                        when {
-                            string.length % 2 != 0 -> 0L
-                            string.isRepeating(string.length / 2) -> number
-                            else -> 0L
-                        }
+                range.sumOf { number ->
+                    val string = number.toString()
+                    when {
+                        string.length % 2 != 0 -> 0L
+                        string.isRepeating(string.length / 2) -> number
+                        else -> 0L
                     }
+                }
             }
         }
         verify {
