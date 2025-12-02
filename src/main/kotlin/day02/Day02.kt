@@ -12,16 +12,19 @@ import kotlin.text.split
 fun main() {
     day(n = 2) {
         part1 { input ->
-            input.toRanges().sumOf { range ->
-                range.sumOf { number ->
-                    val string = number.toString()
-                    when {
-                        string.length % 2 != 0 -> 0L
-                        string.isRepeating(string.length / 2) -> number
-                        else -> 0L
+            input.toRanges()
+                .parallelStream()
+                .map { range ->
+                    range.sumOf { number ->
+                        val string = number.toString()
+                        when {
+                            string.length % 2 != 0 -> 0L
+                            string.isRepeating(string.length / 2) -> number
+                            else -> 0L
+                        }
                     }
                 }
-            }
+                .reduce(0L, Long::plus)
         }
         verify {
             expect result 13919717792L
@@ -29,11 +32,14 @@ fun main() {
         }
 
         part2 { input ->
-            input.toRanges().sumOf { range ->
-                range.sumOf { number ->
-                    if (hasRepeatingChunk(number)) number else 0L
+            input.toRanges()
+                .parallelStream()
+                .map { range ->
+                    range.sumOf { number ->
+                        if (hasRepeatingChunk(number)) number else 0L
+                    }
                 }
-            }
+                .reduce(0L, Long::plus)
         }
         verify {
             expect result 14582313461
@@ -57,7 +63,6 @@ private fun hasRepeatingChunk(number: Long): Boolean {
 private fun String.isRepeating(chunkSize: Int): Boolean =
     chunked(chunkSize).distinct().size == 1
 
-private fun Input.toRanges(): Sequence<LongRange> = lines.first()
-    .splitToSequence(",")
-    .map { it.split("-") }
-    .map { (start, end) -> start.toLong()..end.toLong() }
+private fun Input.toRanges(): List<LongRange> = lines.first()
+    .split(",")
+    .map { it.split("-").let { (start, end) -> start.toLong()..end.toLong() } }
