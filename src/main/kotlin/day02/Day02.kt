@@ -34,11 +34,7 @@ fun main() {
         part2 { input ->
             input.toRanges()
                 .parallelStream()
-                .map { range ->
-                    range.sumOf { number ->
-                        if (hasRepeatingChunk(number)) number else 0L
-                    }
-                }
+                .map { range -> range.filter { hasRepeatingChunk(it) }.sum() }
                 .reduce(0L, Long::plus)
         }
         verify {
