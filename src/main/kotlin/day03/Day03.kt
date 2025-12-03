@@ -1,9 +1,6 @@
 package day03
 
 import common.day
-import common.util.log
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle
-import kotlin.math.max
 
 // answer #1: 17193
 // answer #2: 171297349921310
@@ -12,24 +9,9 @@ fun main() {
     day(n = 3) {
         part1 { input ->
             input.lines
-                .sumOf { line ->
-                    val map = mutableMapOf<Int, Int>()
-                    for (i in 0..(line.length - 2)) {
-                        val char = line[i].digitToInt()
-                        map.getOrPut(char) {
-                            var max = Int.MIN_VALUE
-                            for (j in (i + 1) until line.length) {
-                                if (line[j].digitToInt() > max) {
-                                    max = line[j].digitToInt()
-                                }
-                            }
-                            max
-                        }
-                    }
-                    map.maxBy { it.key }.let {
-                        it.key * 10L + it.value
-                    }
-                }
+                .parallelStream()
+                .map { bank -> maximizeJoltage(bank, batteryCount = 2) }
+                .reduce(0L, Long::plus)
         }
         verify {
             expect result 17193L
@@ -39,7 +21,7 @@ fun main() {
         part2 { input ->
             input.lines
                 .parallelStream()
-                .map { line -> rec(line) }
+                .map { bank -> maximizeJoltage(bank, batteryCount = 12) }
                 .reduce(0L, Long::plus)
         }
         verify {
@@ -49,44 +31,36 @@ fun main() {
     }
 }
 
-private fun rec(
-    line: String,
-    numbers: List<Long> = emptyList(),
-    index: Int = 0,
-    digitsRemaining: Int = 12,
+private fun maximizeJoltage(
+    bank: String,
+    batteryCount: Int,
+    batteries: Long = 0L,
 ): Long {
-    if (digitsRemaining == 0) {
-        return numbers.fold(0L) { acc, i -> acc * 10L + i }
-    }
+    if (batteryCount == 0) return batteries
 
-    val string = line.substring(index)
-    val (index, digit) = findFirstLargestNumber(
-        string,
-        digitsRemaining,
+    val (index, joltage) = findNextMaxJoltage(
+        bank = bank,
+        remainingBatteries = batteryCount,
     )
 
-    return rec(
-        line = string,
-        numbers = numbers + digit.toLong(),
-        index = index + 1,
-        digitsRemaining = digitsRemaining - 1,
+    return maximizeJoltage(
+        bank = bank.substring(index + 1),
+        batteries = batteries * 10 + joltage,
+        batteryCount = batteryCount - 1,
     )
 }
 
-private fun findFirstLargestNumber(
-    string: String,
-    requiredDigits: Int,
+private fun findNextMaxJoltage(
+    bank: String,
+    remainingBatteries: Int,
 ): Pair<Int, Int> {
-    var largest: Pair<Int, Int> = Pair(Int.MIN_VALUE, Int.MIN_VALUE)
-    val range = 0..(string.length - requiredDigits)
-    for (index in range) {
-        val i = string[index].digitToInt()
-
+    var maxWithIndex: Pair<Int, Int> = -1 to Int.MIN_VALUE
+    for (index in 0..(bank.length - remainingBatteries)) {
+        val joltage = bank[index].digitToInt()
         when {
-            i == 9 -> return index to i
-            i > largest.second -> largest = index to i
+            joltage == 9 -> return index to joltage
+            joltage > maxWithIndex.second -> maxWithIndex = index to joltage
         }
     }
-    if (largest.second == Int.MIN_VALUE) error("")
-    return largest
+    return maxWithIndex
 }
