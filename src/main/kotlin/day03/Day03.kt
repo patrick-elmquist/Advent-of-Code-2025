@@ -9,6 +9,7 @@ fun main() {
     day(n = 3) {
         part1 { input ->
             input.lines
+                .map { line -> line.map(Char::digitToInt)}
                 .parallelStream()
                 .map { bank -> maximizeJoltage(bank, batteryCount = 2) }
                 .reduce(0L, Long::plus)
@@ -20,6 +21,7 @@ fun main() {
 
         part2 { input ->
             input.lines
+                .map { line -> line.map(Char::digitToInt)}
                 .parallelStream()
                 .map { bank -> maximizeJoltage(bank, batteryCount = 12) }
                 .reduce(0L, Long::plus)
@@ -32,35 +34,15 @@ fun main() {
 }
 
 private fun maximizeJoltage(
-    bank: String,
+    bank: List<Int>,
     batteryCount: Int,
-    batteries: Long = 0L,
+    joltage: Long = 0L,
 ): Long {
-    if (batteryCount == 0) return batteries
-
-    val (index, joltage) = findNextMaxJoltage(
-        bank = bank,
-        remainingBatteries = batteryCount,
-    )
-
+    if (batteryCount == 0) return joltage
+    val index = (0..(bank.size - batteryCount)).maxBy { bank[it] }
     return maximizeJoltage(
-        bank = bank.substring(index + 1),
-        batteries = batteries * 10 + joltage,
+        bank = bank.subList(index + 1, bank.size),
+        joltage = joltage * 10 + bank[index],
         batteryCount = batteryCount - 1,
     )
-}
-
-private fun findNextMaxJoltage(
-    bank: String,
-    remainingBatteries: Int,
-): Pair<Int, Int> {
-    var maxWithIndex: Pair<Int, Int> = -1 to Int.MIN_VALUE
-    for (index in 0..(bank.length - remainingBatteries)) {
-        val joltage = bank[index].digitToInt()
-        when {
-            joltage == 9 -> return index to joltage
-            joltage > maxWithIndex.second -> maxWithIndex = index to joltage
-        }
-    }
-    return maxWithIndex
 }
