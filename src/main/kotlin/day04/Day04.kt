@@ -12,9 +12,9 @@ fun main() {
     day(n = 4) {
         part1 { input ->
             val grid = input.grid
-                .filter { it.value == '@' }
+                .filterValues { it == '@' }
 
-            grid.count { (point, _) -> grid.isRemovable(point) }
+            grid.count { (xy, _) -> grid.isRemovable(xy) }
         }
         verify {
             expect result 1370
@@ -23,18 +23,18 @@ fun main() {
 
         part2 { input ->
             val grid = input.grid
-                .filter { it.value == '@' }
+                .filterValues { it == '@' }
                 .toMutableMap()
 
-            val countBefore = grid.size
+            val initialRollCount = grid.size
 
             while (true) {
-                grid.filter { (point, _) -> grid.isRemovable(point) }
+                grid.filterKeys { xy -> grid.isRemovable(xy) }
                     .ifEmpty { break }
-                    .let { removable -> removable.forEach { grid.remove(it.key) } }
+                    .also { removable -> grid -= removable.keys }
             }
 
-            countBefore - grid.size
+            initialRollCount - grid.size
         }
         verify {
             expect result 8437
@@ -43,5 +43,5 @@ fun main() {
     }
 }
 
-private fun Map<Point, Char>.isRemovable(roll: Point): Boolean =
-    roll.neighbors(diagonal = true).count { this[it] != null } < 4
+private fun Map<Point, Char>.isRemovable(xy: Point): Boolean =
+    xy.neighbors(diagonal = true).count { this[it] != null } < 4
