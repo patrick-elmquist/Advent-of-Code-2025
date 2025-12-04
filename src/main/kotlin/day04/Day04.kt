@@ -44,4 +44,4 @@ fun main() {
 }
 
 private fun Map<Point, Char>.isRemovable(xy: Point): Boolean =
-    xy.neighbors(diagonal = true).count { this[it] != null } < 4
+    xy.neighbors(diagonal = true).count { it in this } < 4
