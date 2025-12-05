@@ -2,7 +2,7 @@ package day05
 
 import common.Input
 import common.day
-import common.util.sliceByBlank
+import common.util.sliceByBlankLine
 import kotlin.math.max
 import kotlin.math.min
 
@@ -22,22 +22,7 @@ fun main() {
 
         part2 { input ->
             val (ranges, _) = input.parseRangesAndIds()
-
-            var sum = 0L
-            val queue = ranges.toMutableList()
-            while (queue.isNotEmpty()) {
-                val range = queue.removeLast()
-
-                val index = queue.indexOfFirst { range.overlaps(it) }
-                if (index > -1) {
-                    val overlappingRange = queue.removeAt(index)
-                    val mergedRange = range.merge(overlappingRange)
-                    queue.add(mergedRange)
-                } else {
-                    sum += range.last - range.first + 1
-                }
-            }
-            sum
+            mergeRanges(ranges).sumOf { range -> range.last - range.first + 1 }
         }
         verify {
             expect result 369761800782619L
@@ -46,6 +31,22 @@ fun main() {
     }
 }
 
+private fun mergeRanges(ranges: List<LongRange>): List<LongRange> =
+    buildList {
+        val queue = ranges.toMutableList()
+        while (queue.isNotEmpty()) {
+            val range = queue.removeLast()
+            val index = queue.indexOfFirst { range.overlaps(it) }
+            if (index > -1) {
+                val overlappingRange = queue.removeAt(index)
+                val mergedRange = range.merge(overlappingRange)
+                queue.add(mergedRange)
+            } else {
+                add(range)
+            }
+        }
+    }
+
 private fun LongRange.overlaps(other: LongRange): Boolean =
     first <= other.last && other.first <= last
 
@@ -53,7 +54,7 @@ private fun LongRange.merge(other: LongRange): LongRange =
     min(first, other.first)..max(last, other.last)
 
 private fun Input.parseRangesAndIds(): Pair<List<LongRange>, List<Long>> =
-    lines.sliceByBlank()
+    lines.sliceByBlankLine()
         .let { (r, i) ->
             val ranges = r.map { range ->
                 range.split("-")
@@ -62,4 +63,3 @@ private fun Input.parseRangesAndIds(): Pair<List<LongRange>, List<Long>> =
             }
             ranges to i.map(String::toLong)
         }
-

@@ -38,7 +38,7 @@ fun <T> List<String>.mapWithRegex(
 ): List<T> =
     this@mapWithRegex.map { line -> transform(regex.find(line)!!.destructured) }
 
-fun List<String>.sliceByBlank() =
+fun List<String>.sliceByBlankLine() =
     sliceBy(excludeMatch = true) { _, line -> line.isEmpty() }
 
 fun List<String>.sliceBy(

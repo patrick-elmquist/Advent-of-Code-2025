@@ -108,7 +108,8 @@ private inline fun Solver.runWithTimer(input: Input) =
     measureTimedValue { invoke(input) }
         .let { result -> Answer(result.value, result.duration) }
 
-private fun Duration.toMillisString() = "${inWholeMilliseconds}ms"
+private fun Duration.toMillisString() =
+    "${inWholeMilliseconds}ms ${inWholeMicroseconds - inWholeMilliseconds * 1000}µs"
 
 private object Emoji {
     const val STAR = "⭐️"
