@@ -1,5 +1,6 @@
 package day05
 
+import common.Input
 import common.day
 import common.util.sliceByBlank
 import kotlin.math.max
@@ -11,17 +12,8 @@ import kotlin.math.min
 fun main() {
     day(n = 5) {
         part1 { input ->
-            val (ranges, ids) = input.lines.sliceByBlank()
-                .let { (ranges, ids) ->
-                    ranges.map {
-                        it.split("-").let { (start, end) ->
-                            start.toLong()..end.toLong()
-                        }
-                    } to ids.map { it.toLong() }
-                }
-
-            ids.count { id -> ranges.any { id in it } }
-
+            val (ranges, ids) = input.parseRangesAndIds()
+            ids.count { id -> ranges.any { range -> id in range } }
         }
         verify {
             expect result 635
@@ -29,34 +21,23 @@ fun main() {
         }
 
         part2 { input ->
-            val (ranges, ids) = input.lines.sliceByBlank()
-                .let { (ranges, ids) ->
-                    ranges.map {
-                        it.split("-").let { (start, end) ->
-                            start.toLong()..end.toLong()
-                        }
-                    } to ids.map { it.toLong() }
-                }
+            val (ranges, _) = input.parseRangesAndIds()
 
-            val visited = mutableListOf<LongRange>()
+            var sum = 0L
             val queue = ranges.toMutableList()
             while (queue.isNotEmpty()) {
                 val range = queue.removeLast()
-                val start = range.start
-                val end = range.endInclusive
 
-                val match = queue.firstOrNull { start in it || end in it || (it.start in range && it.endInclusive in range) }
-                if (match != null) {
-                    queue.remove(match)
-                    queue.add(merge(range, match))
+                val index = queue.indexOfFirst { range.overlaps(it) }
+                if (index > -1) {
+                    val overlappingRange = queue.removeAt(index)
+                    val mergedRange = range.merge(overlappingRange)
+                    queue.add(mergedRange)
                 } else {
-                    visited.add(range)
+                    sum += range.last - range.first + 1
                 }
             }
-
-            visited.sumOf {
-                it.endInclusive - it.start + 1
-            }
+            sum
         }
         verify {
             expect result 369761800782619L
@@ -65,7 +46,20 @@ fun main() {
     }
 }
 
-private fun merge(a: LongRange, b: LongRange): LongRange {
-    return (min(a.first, b.first)..max(a.endInclusive, b.endInclusive))
-        .also { println("merging a:$a and b:$b into $it") }
-}
+private fun LongRange.overlaps(other: LongRange): Boolean =
+    first <= other.last && other.first <= last
+
+private fun LongRange.merge(other: LongRange): LongRange =
+    min(first, other.first)..max(last, other.last)
+
+private fun Input.parseRangesAndIds(): Pair<List<LongRange>, List<Long>> =
+    lines.sliceByBlank()
+        .let { (r, i) ->
+            val ranges = r.map { range ->
+                range.split("-")
+                    .map(String::toLong)
+                    .let { (start, end) -> start..end }
+            }
+            ranges to i.map(String::toLong)
+        }
+
