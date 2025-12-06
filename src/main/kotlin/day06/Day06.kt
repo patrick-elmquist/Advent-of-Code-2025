@@ -10,21 +10,18 @@ private val whitespaceRegex = "\\s+".toRegex()
 fun main() {
     day(n = 6) {
         part1 { input ->
-            val trimmed = input.lines.map { it.trim().split(whitespaceRegex).map { it.trim() } }
-            val operators = trimmed.last()
-            val lists = List(operators.size) { mutableListOf<Long>() }
-            trimmed.dropLast(1)
-                .forEach { line ->
-                    line.forEachIndexed { i, number ->
-                        lists[i].add(number.toLong())
-                    }
-                }
+            val trimmed = input.lines
+                .map(String::trim)
+                .map { it.split(whitespaceRegex).map(String::trim) }
 
-            lists
-                .mapIndexed { index, numbers ->
-                    numbers.reduce(operators[index].first())
-                }
-                .sum()
+            val operators = trimmed.last().map { it.first() }
+            val lists = List(operators.size) { mutableListOf<Long>() }
+            trimmed.dropLast(1).forEach { line ->
+                line.forEachIndexed { i, number -> lists[i].add(number.toLong()) }
+            }
+
+            operators.zip(lists)
+                .sumOf { (operator, numbers) -> numbers.reduce(operator) }
         }
         verify {
             expect result 6295830249262L
@@ -35,8 +32,8 @@ fun main() {
             val lines = input.lines.map { "$it " }
             var operator: Char? = null
             val numbers = mutableListOf<Long>()
-            lines.first().indices.sumOf { index ->
-                val column = lines.map { it[index] }
+            lines.first().indices.sumOf { columnIndex ->
+                val column = lines.map { it[columnIndex] }
                 if (column.all(Char::isWhitespace)) {
                     numbers.reduce(operator!!)
                 } else {
