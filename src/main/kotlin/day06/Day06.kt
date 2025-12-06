@@ -8,30 +8,21 @@ import common.day
 fun main() {
     day(n = 6) {
         part1 { input ->
-            val lists = mutableListOf<MutableList<Long>>()
+            val operators = input.lines.last().trim().split("\\s+".toRegex())
+            val lists = List(operators.size) { mutableListOf<Long>() }
             input.lines.dropLast(1)
                 .forEach { line ->
                     line.trim()
                         .split("\\s+".toRegex())
-                        .forEachIndexed { i, c ->
-                            val list = if (lists.lastIndex < i) {
-                                val l = mutableListOf<Long>()
-                                lists.add(l)
-                                l
-                            } else {
-                                lists[i]
-                            }
-                            list.add(c.toLong())
+                        .forEachIndexed { i, number ->
+                            lists[i].add(number.toLong())
                         }
                 }
 
-            val instr = input.lines.last()
-                .split("\\s+".toRegex())
-
-            lists.mapIndexed { i, l ->
-                when (instr[i]) {
-                    "*" -> l.reduce(Long::times)
-                    else -> l.reduce(Long::plus)
+            lists.mapIndexed { index, numbers ->
+                when (operators[index]) {
+                    "*" -> numbers.reduce(Long::times)
+                    else -> numbers.reduce(Long::plus)
                 }
             }.sum()
         }
@@ -42,40 +33,39 @@ fun main() {
 
         part2 { input ->
             val last = input.lines.last()
-            val columns = last
-                .mapIndexedNotNull { i, c ->
-                    if (c.isWhitespace()) {
-                        null
-                    } else {
-                        val other = last.withIndex()
-                            .firstOrNull { (index, c) ->
-                                index > i && !c.isWhitespace()
-                            }?.let { it.index - 1 } ?: last.length
-                        other - i
-                    }
-                }
+            val operators = last.trim().split("\\s+".toRegex())
 
-            val lists = List(columns.size) { mutableListOf<String>() }
+            val columnWidths = last.mapIndexedNotNull { i, c ->
+                if (c.isWhitespace()) {
+                    null
+                } else {
+                    val other = last.withIndex()
+                        .firstOrNull { (index, c) -> index > i && !c.isWhitespace() }
+                        ?.let { it.index - 1 }
+                        ?: last.length
+                    other - i
+                }
+            }
+
+            val columns = List(columnWidths.size) { mutableListOf<String>() }
             input.lines.dropLast(1)
                 .forEach { line ->
-                    var sum = 0
-                    columns.forEachIndexed { index, column ->
-                        val d = line.substring(sum, (sum + column).coerceAtMost(line.length))
-                        sum += column + 1
-                        lists[index].add(d)
+                    var start = 0
+                    columnWidths.forEachIndexed { index, columnWidth ->
+                        val end = (start + columnWidth).coerceAtMost(line.length)
+                        val entry = line.substring(start, end)
+                        start += columnWidth + 1
+                        columns[index].add(entry)
                     }
                 }
 
-            val instr = input.lines.last()
-                .split("\\s+".toRegex())
-
-            columns.mapIndexed { index, c ->
-                val column = lists[index]
+            columnWidths.mapIndexed { index, c ->
+                val column = columns[index]
                 val numbers = (0 until c).map { i ->
                     column.map { it[i] }.joinToString("").trim().toLong()
                 }
 
-                when (instr[index]) {
+                when (operators[index]) {
                     "*" -> numbers.reduce(Long::times)
                     else -> numbers.reduce(Long::plus)
                 }
