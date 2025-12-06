@@ -32,44 +32,27 @@ fun main() {
         }
 
         part2 { input ->
-            val last = input.lines.last()
-            val operators = last.trim().split("\\s+".toRegex())
-
-            val columnWidths = last.mapIndexedNotNull { i, c ->
-                if (c.isWhitespace()) {
-                    null
+            val lines = input.lines.map { "$it " }
+            val columnIndices = lines.first().indices
+            var operator: Char? = null
+            val numbers = mutableListOf<Long>()
+            columnIndices.sumOf { index ->
+                val column = lines.map { it[index] }
+                if (column.all(Char::isWhitespace)) {
+                    when (operator!!) {
+                        '*' -> numbers.reduce(Long::times)
+                        else -> numbers.reduce(Long::plus)
+                    }
                 } else {
-                    val other = last.withIndex()
-                        .firstOrNull { (index, c) -> index > i && !c.isWhitespace() }
-                        ?.let { it.index - 1 }
-                        ?: last.length
-                    other - i
+                    val possibleOperator = column.last()
+                    if (possibleOperator != ' ') {
+                        operator = possibleOperator
+                        numbers.clear()
+                    }
+                    numbers.add(column.dropLast(1).joinToString("").trim().toLong())
+                    0L
                 }
             }
-
-            val columns = List(columnWidths.size) { mutableListOf<String>() }
-            input.lines.dropLast(1)
-                .forEach { line ->
-                    var start = 0
-                    columnWidths.forEachIndexed { index, columnWidth ->
-                        val end = (start + columnWidth).coerceAtMost(line.length)
-                        val entry = line.substring(start, end)
-                        start += columnWidth + 1
-                        columns[index].add(entry)
-                    }
-                }
-
-            columnWidths.mapIndexed { index, c ->
-                val column = columns[index]
-                val numbers = (0 until c).map { i ->
-                    column.map { it[i] }.joinToString("").trim().toLong()
-                }
-
-                when (operators[index]) {
-                    "*" -> numbers.reduce(Long::times)
-                    else -> numbers.reduce(Long::plus)
-                }
-            }.sum()
         }
         verify {
             expect result 9194682052782L
