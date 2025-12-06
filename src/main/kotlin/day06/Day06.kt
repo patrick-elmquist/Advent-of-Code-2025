@@ -44,9 +44,8 @@ fun main() {
                         else -> numbers.reduce(Long::plus)
                     }
                 } else {
-                    val possibleOperator = column.last()
-                    if (possibleOperator != ' ') {
-                        operator = possibleOperator
+                    if (column.last() in setOf('*', '+')) {
+                        operator = column.last()
                         numbers.clear()
                     }
                     numbers.add(column.dropLast(1).joinToString("").trim().toLong())
