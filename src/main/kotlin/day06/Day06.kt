@@ -1,22 +1,21 @@
 package day06
 
 import common.day
+import kotlin.collections.reduce
 
 // answer #1: 6295830249262
 // answer #2: 9194682052782
 
-private val whitespaceRegex = "\\s+".toRegex()
-
 fun main() {
     day(n = 6) {
         part1 { input ->
-            val trimmed = input.lines
+            val lines = input.lines
                 .map(String::trim)
-                .map { it.split(whitespaceRegex).map(String::trim) }
+                .map { it.split("\\s+".toRegex()).map(String::trim) }
 
-            val operators = trimmed.last().map { it.first() }
+            val operators = lines.last().map { it.first() }
             val lists = List(operators.size) { mutableListOf<Long>() }
-            trimmed.dropLast(1).forEach { line ->
+            lines.dropLast(1).forEach { line ->
                 line.forEachIndexed { i, number -> lists[i].add(number.toLong()) }
             }
 
@@ -55,7 +54,9 @@ fun main() {
 }
 
 private fun List<Long>.reduce(operator: Char): Long =
-    when (operator) {
-        '*' -> reduce(Long::times)
-        else -> reduce(Long::plus)
-    }
+    reduce(
+        when (operator) {
+            '*' -> Long::times
+            else -> Long::plus
+        },
+    )
