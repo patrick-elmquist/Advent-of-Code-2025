@@ -1,6 +1,5 @@
 package day07
 
-import common.Input
 import common.day
 import common.grid
 import common.util.Point
@@ -45,13 +44,12 @@ fun main() {
 
         part2 { input ->
             val grid = input.grid.filter { it.value != '.' }
-            val s = grid.entries.single { it.value == 'S' }.key
-            val splitters =
-                grid.filterValues { it != 'S' }.keys.sortedWith(compareBy({ it.x }, { it.y }))
-            val start = splitters.first { it.x == s.x }
-
+            val splitters = grid.filterValues { it != 'S' }
+                .keys
+                .sortedWith(compareBy({ it.x }, { it.y }))
+            val start = grid.entries.single { it.value == 'S' }.key
             rec(
-                splitter = start,
+                splitter = splitters.first { it.x == start.x },
                 cache = mutableMapOf(),
                 splitters = splitters,
             )
@@ -67,31 +65,28 @@ private fun rec(
     splitter: Point,
     cache: MutableMap<Point, Long>,
     splitters: List<Point>,
-): Long {
-    return cache.getOrPut(splitter) {
-        val left = splitters.firstOrNull { it.x == splitter.x - 1 && it.y > splitter.y }
-        val leftTimelines = if (left == null) {
-            1L
-        } else {
-            rec(
-                splitter = left,
-                cache = cache,
-                splitters = splitters,
-            )
-        }
-
-
-        val right = splitters.firstOrNull { it.x == splitter.x + 1 && it.y > splitter.y }
-        val rightTimelines = if (right == null) {
-            1L
-        } else {
-            rec(
-                splitter = right,
-                cache = cache,
-                splitters = splitters,
-            )
-        }
-
-        leftTimelines + rightTimelines
+): Long = cache.getOrPut(splitter) {
+    val left = splitters.firstOrNull { it.x == splitter.x - 1 && it.y > splitter.y }
+    val leftTimelines = if (left == null) {
+        1L
+    } else {
+        rec(
+            splitter = left,
+            cache = cache,
+            splitters = splitters,
+        )
     }
+
+    val right = splitters.firstOrNull { it.x == splitter.x + 1 && it.y > splitter.y }
+    val rightTimelines = if (right == null) {
+        1L
+    } else {
+        rec(
+            splitter = right,
+            cache = cache,
+            splitters = splitters,
+        )
+    }
+
+    leftTimelines + rightTimelines
 }
