@@ -1,9 +1,9 @@
 package day07
 
+import common.Input
 import common.day
 import common.grid
 import common.util.Point
-import common.util.arrayDequeOf
 
 // answer #1: 1681
 // answer #2: 422102272495018
@@ -11,30 +11,21 @@ import common.util.arrayDequeOf
 fun main() {
     day(n = 7) {
         part1 { input ->
-            val grid = input.grid.filter { it.value != '.' }
-            val s = grid.entries.single { it.value == 'S' }.key
-            val beams = arrayDequeOf(s.copy(y = s.y + 1))
-            val splitters = grid.entries.sortedWith(compareBy({ it.key.x }, { it.key.y }))
-            val hitSplitters = mutableSetOf(s)
+            val splitters = parseSplitters(input)
+            val queue = mutableListOf(splitters.minBy { it.y })
 
-            val splits = mutableSetOf<Point>()
-            while (beams.isNotEmpty()) {
-                val beam = beams.removeFirst()
+            val visitedSplitters = mutableSetOf<Point>()
+            val offsets = listOf(-1, 1)
+            while (queue.isNotEmpty()) {
+                val splitter = queue.removeFirst()
 
-                if (beam in hitSplitters) continue
-                hitSplitters += beam
+                if (splitter in visitedSplitters) continue
+                visitedSplitters += splitter
 
-                val collision =
-                    splitters.firstOrNull { it.key.x == beam.x && it.key.y > beam.y }?.key
-
-                if (collision != null) {
-                    beams += collision.copy(x = collision.x - 1)
-                    beams += collision.copy(x = collision.x + 1)
-                    splits += collision
-                }
+                queue += offsets.mapNotNull { splitters.findSplitterBelow(splitter, it) }
             }
 
-            splits.size
+            visitedSplitters.size
         }
 
         verify {
@@ -43,13 +34,11 @@ fun main() {
         }
 
         part2 { input ->
-            val splitters = input.grid
-                .filterValues { it == '^' }
-                .keys
+            val splitters = parseSplitters(input)
 
             countTimelinesRecursively(
                 splitter = splitters.minBy { it.y },
-                splitters = splitters.toList(),
+                splitters = splitters,
             )
         }
         verify {
@@ -58,6 +47,12 @@ fun main() {
         }
     }
 }
+
+private fun parseSplitters(input: Input): List<Point> =
+    input.grid
+        .filterValues { it == '^' }
+        .keys
+        .toList()
 
 private fun countTimelinesRecursively(
     splitter: Point,
