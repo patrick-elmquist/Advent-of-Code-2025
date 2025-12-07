@@ -43,14 +43,14 @@ fun main() {
         }
 
         part2 { input ->
-            val grid = input.grid.filter { it.value != '.' }
-            val splitters = grid.filterValues { it != 'S' }
+            val grid = input.grid
+            val splitters = grid.filterValues { it == '^' }
                 .keys
                 .sortedWith(compareBy({ it.x }, { it.y }))
             val start = grid.entries.single { it.value == 'S' }.key
-            rec(
+
+            countTimelinesRecursively(
                 splitter = splitters.first { it.x == start.x },
-                cache = mutableMapOf(),
                 splitters = splitters,
             )
         }
@@ -61,32 +61,35 @@ fun main() {
     }
 }
 
-private fun rec(
+private fun countTimelinesRecursively(
     splitter: Point,
-    cache: MutableMap<Point, Long>,
     splitters: List<Point>,
+    cache: MutableMap<Point, Long> = mutableMapOf(),
 ): Long = cache.getOrPut(splitter) {
-    val left = splitters.firstOrNull { it.x == splitter.x - 1 && it.y > splitter.y }
-    val leftTimelines = if (left == null) {
+    val nextLeftSplitter = splitters.findSplitterBelow(splitter, x = -1)
+    val leftTimelines = if (nextLeftSplitter == null) {
         1L
     } else {
-        rec(
-            splitter = left,
-            cache = cache,
+        countTimelinesRecursively(
+            splitter = nextLeftSplitter,
             splitters = splitters,
+            cache = cache,
         )
     }
 
-    val right = splitters.firstOrNull { it.x == splitter.x + 1 && it.y > splitter.y }
-    val rightTimelines = if (right == null) {
+    val nextRightSplitter = splitters.findSplitterBelow(splitter, x = 1)
+    val rightTimelines = if (nextRightSplitter == null) {
         1L
     } else {
-        rec(
-            splitter = right,
-            cache = cache,
+        countTimelinesRecursively(
+            splitter = nextRightSplitter,
             splitters = splitters,
+            cache = cache,
         )
     }
 
     leftTimelines + rightTimelines
 }
+
+private fun List<Point>.findSplitterBelow(p: Point, x: Int): Point? =
+    firstOrNull { it.x == p.x + x && it.y > p.y }
