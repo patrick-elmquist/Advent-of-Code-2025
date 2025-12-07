@@ -43,15 +43,13 @@ fun main() {
         }
 
         part2 { input ->
-            val grid = input.grid
-            val splitters = grid.filterValues { it == '^' }
+            val splitters = input.grid
+                .filterValues { it == '^' }
                 .keys
-                .sortedWith(compareBy({ it.x }, { it.y }))
-            val start = grid.entries.single { it.value == 'S' }.key
 
             countTimelinesRecursively(
-                splitter = splitters.first { it.x == start.x },
-                splitters = splitters,
+                splitter = splitters.minBy { it.y },
+                splitters = splitters.toList(),
             )
         }
         verify {
@@ -66,7 +64,7 @@ private fun countTimelinesRecursively(
     splitters: List<Point>,
     cache: MutableMap<Point, Long> = mutableMapOf(),
 ): Long = cache.getOrPut(splitter) {
-    val nextLeftSplitter = splitters.findSplitterBelow(splitter, x = -1)
+    val nextLeftSplitter = splitters.findSplitterBelow(splitter, offset = -1)
     val leftTimelines = if (nextLeftSplitter == null) {
         1L
     } else {
@@ -77,7 +75,7 @@ private fun countTimelinesRecursively(
         )
     }
 
-    val nextRightSplitter = splitters.findSplitterBelow(splitter, x = 1)
+    val nextRightSplitter = splitters.findSplitterBelow(splitter, offset = 1)
     val rightTimelines = if (nextRightSplitter == null) {
         1L
     } else {
@@ -91,5 +89,5 @@ private fun countTimelinesRecursively(
     leftTimelines + rightTimelines
 }
 
-private fun List<Point>.findSplitterBelow(p: Point, x: Int): Point? =
-    firstOrNull { it.x == p.x + x && it.y > p.y }
+private fun List<Point>.findSplitterBelow(p: Point, offset: Int): Point? =
+    firstOrNull { it.x == p.x + offset && it.y > p.y }
