@@ -16,14 +16,14 @@ fun <T> arrayDequeOf(vararg values: T): ArrayDeque<T> =
 /**
  * Create a Point,Char grid from the given Strings
  */
-val Iterable<String>.grid: Map<Point, Char>
-    get() = flatMapIndexed { y, row -> row.mapIndexed { x, c -> Point(x, y) to c } }.toMap()
+val Iterable<String>.grid: Map<Vec2i, Char>
+    get() = flatMapIndexed { y, row -> row.mapIndexed { x, c -> Vec2i(x, y) to c } }.toMap()
 
-fun Map<Point, Char>.ignoreWhitespace() = filterValues { it != ' ' }
+fun Map<Vec2i, Char>.ignoreWhitespace() = filterValues { it != ' ' }
 
-fun Map<Point, Char>.flipKeyValue() = map { it.value to it.key }.toMap()
+fun Map<Vec2i, Char>.flipKeyValue() = map { it.value to it.key }.toMap()
 
-fun gridOf(vararg strings: String, trimWhiteSpace: Boolean = false): Map<Point, Char> {
+fun gridOf(vararg strings: String, trimWhiteSpace: Boolean = false): Map<Vec2i, Char> {
     val grid = strings.toList().grid
     return if (trimWhiteSpace) {
         grid.filterValues { it != ' ' }
@@ -59,7 +59,7 @@ fun List<String>.sliceBy(
     .first
     .toList()
 
-fun <T> Map<Point, T>.minMax(block: (Map.Entry<Point, T>) -> Int): IntRange {
+fun <T> Map<Vec2i, T>.minMax(block: (Map.Entry<Vec2i, T>) -> Int): IntRange {
     val max = maxOf { block(it) }
     val min = minOf { block(it) }
     return min..max

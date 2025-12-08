@@ -1,12 +1,12 @@
 package common.util
 
-enum class Direction(val point: Point) {
-    Left(Point(-1, 0)),
-    Up(Point(0, -1)),
-    Right(Point(1, 0)),
-    Down(Point(0, 1));
+enum class Direction(val point: Vec2i) {
+    Left(Vec2i(-1, 0)),
+    Up(Vec2i(0, -1)),
+    Right(Vec2i(1, 0)),
+    Down(Vec2i(0, 1));
 
-    val pointL = PointL(point.x, point.y)
+    val vec2l = Vec2l(point.x, point.y)
 
     companion object
 }

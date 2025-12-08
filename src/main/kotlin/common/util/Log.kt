@@ -50,16 +50,16 @@ fun printMermaidGraph(type: String = "stateDiagram-v2", block: MermaidBuilder.()
     scope.build().log()
 }
 
-fun <T> Map<Point, T>.print(
+fun <T> Map<Vec2i, T>.print(
     width: IntRange? = null,
     height: IntRange? = null,
-    block: (Point, T?) -> Any? = { _, c -> c },
+    block: (Vec2i, T?) -> Any? = { _, c -> c },
 ) {
     val xRange = width ?: minMax { it.key.x }
     val yRange = height ?: minMax { it.key.y }
     for (y in yRange) {
         for (x in xRange) {
-            val point = Point(x, y)
+            val point = Vec2i(x, y)
             if (loggingEnabled) {
                 print(block(point, get(point)))
             }
@@ -70,10 +70,10 @@ fun <T> Map<Point, T>.print(
     }
 }
 
-fun <T> Map<Point, T>.printPadded(
+fun <T> Map<Vec2i, T>.printPadded(
     width: IntRange? = null,
     height: IntRange? = null,
-    block: (Point, T?) -> String,
+    block: (Vec2i, T?) -> String,
 ) {
     val xRange = width ?: minMax { it.key.x }
     val yRange = height ?: minMax { it.key.y }
@@ -85,7 +85,7 @@ fun <T> Map<Point, T>.printPadded(
     for (y in yRange) {
         print(" $y:".padStart(4))
         for (x in xRange) {
-            val point = Point(x, y)
+            val point = Vec2i(x, y)
             if (loggingEnabled) {
                 print(block(point, get(point)))
             }

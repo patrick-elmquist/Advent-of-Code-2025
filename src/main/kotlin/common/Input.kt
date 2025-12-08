@@ -1,6 +1,6 @@
 package common
 
-import common.util.Point
+import common.util.Vec2i
 import common.util.grid
 import java.io.File
 
@@ -12,7 +12,7 @@ data class Input(val lines: List<String>) {
     companion object
 }
 
-val Input.grid: Map<Point, Char>
+val Input.grid: Map<Vec2i, Char>
     get() = lines.grid
 
 val Input.bounds: Pair<Int, Int>

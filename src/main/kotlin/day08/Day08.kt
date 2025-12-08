@@ -1,8 +1,8 @@
 package day08
 
+import common.Input
 import common.day
-import common.util.Point
-import kotlin.math.sqrt
+import common.util.Vec3l
 
 // answer #1: 123234
 // answer #2: 9259958565
@@ -10,53 +10,15 @@ import kotlin.math.sqrt
 fun main() {
     day(n = 8) {
         part1 { input ->
-            val lines = input.lines
-            val count = lines.first().toInt()
-            val points = lines.drop(1).map {
-                it.split(',').map { it.toLong() }.let { (x, y, z) -> Vec3l(x, y, z) }
+            val junctionBoxes = parseJunctionBoxes(input)
+            val count = when {
+                input.lines.size == 20 -> 10
+                else -> 1000
             }
-
-            val distances = mutableMapOf<List<Vec3l>, Float>()
-            points.forEach { p1 ->
-                points.forEach { p2 ->
-                    if (p1 != p2) distances[listOf(p1, p2).sorted()] = p1.distanceTo(p2)
-                }
-            }
-            val sorted = distances.entries.sortedBy { it.value }.map { it.key }.toMutableList()
-//            println(sorted)
-
-            val circuits = mutableListOf<MutableSet<Vec3l>>()
-            var n = 0
-            while (n < count) {
-                val (p1, p2) = sorted.removeFirst()
-
-                val p1Circuit = circuits.firstOrNull { p1 in it }
-                val p2Circuit = circuits.firstOrNull { p2 in it }
-
-                when {
-                    p1Circuit != null && p2Circuit != null && p1Circuit == p2Circuit -> Unit
-
-                    p1Circuit == null && p2Circuit == null -> {
-                        circuits += mutableSetOf(p1, p2)
-                    }
-
-                    p1Circuit != null && p2Circuit != null -> {
-                        circuits.remove(p2Circuit)
-                        p1Circuit.addAll(p2Circuit)
-                    }
-
-                    p1Circuit != null -> {
-                        p1Circuit += p2
-                    }
-
-                    p2Circuit != null -> {
-                        p2Circuit += p1
-                    }
-
-                    else -> error("wtf")
-                }
-                n++
-            }
+            val (circuits, _) = makeConnections(
+                junctionBoxes = junctionBoxes,
+                count = count,
+            )
 
             circuits.map { it.size.toLong() }.sortedDescending().take(3).reduce(Long::times)
         }
@@ -66,63 +28,10 @@ fun main() {
         }
 
         part2 { input ->
-            val lines = input.lines
-            val count = lines.first().toInt()
-            val points = lines.drop(1).map {
-                it.split(',').map { it.toLong() }.let { (x, y, z) -> Vec3l(x, y, z) }
-            }
+            val junctionBoxes = parseJunctionBoxes(input)
+            val (_, lastPair) = makeConnections(junctionBoxes = junctionBoxes)
 
-            val distances = mutableMapOf<List<Vec3l>, Float>()
-            points.forEach { p1 ->
-                points.forEach { p2 ->
-                    if (p1 != p2) distances[listOf(p1, p2).sorted()] = p1.distanceTo(p2)
-                }
-            }
-            val sorted = distances.entries.sortedBy { it.value }.map { it.key }.toMutableList()
-//            println(sorted)
-
-            val circuits = mutableListOf<MutableSet<Vec3l>>()
-            points.forEach {
-                circuits += mutableSetOf(it)
-            }
-
-            var n = 0
-            var last: List<Vec3l>? = null
-            while (circuits.size != 1) {
-                val pair = sorted.removeFirst()
-                last = pair
-                val (p1, p2) = pair
-
-                val p1Circuit = circuits.firstOrNull { p1 in it }
-                val p2Circuit = circuits.firstOrNull { p2 in it }
-
-                when {
-                    p1Circuit != null && p2Circuit != null && p1Circuit == p2Circuit -> Unit
-
-                    p1Circuit == null && p2Circuit == null -> {
-                        circuits += mutableSetOf(p1, p2)
-                    }
-
-                    p1Circuit != null && p2Circuit != null -> {
-                        circuits.remove(p2Circuit)
-                        p1Circuit.addAll(p2Circuit)
-                    }
-
-                    p1Circuit != null -> {
-                        p1Circuit += p2
-                    }
-
-                    p2Circuit != null -> {
-                        p2Circuit += p1
-                    }
-
-                    else -> error("wtf")
-                }
-
-                n++
-            }
-
-            last!!.let { (p1, p2) -> p1.x * p2.x }
+            lastPair.first.x * lastPair.second.x
         }
         verify {
             expect result 9259958565L
@@ -131,29 +40,56 @@ fun main() {
     }
 }
 
-private data class Vec3l(val x: Long, val y: Long, val z: Long) : Comparable<Vec3l> {
-    override fun compareTo(other: Vec3l): Int {
-        val z = z.compareTo(other.z)
-        if (z != 0) {
-            return z
+private fun makeConnections(
+    junctionBoxes: List<Vec3l>,
+    count: Int? = null,
+): Pair<List<Set<Vec3l>>, Pair<Vec3l, Vec3l>> {
+    val closestPairs = calculateClosestPairs(junctionBoxes)
+    val circuits = junctionBoxes.map { mutableSetOf(it) }.toMutableList()
+    val boxPairsToConnect = closestPairs
+        .take(count ?: closestPairs.size)
+        .toMutableList()
+
+    var lastPair: Pair<Vec3l, Vec3l>
+    do {
+        lastPair = boxPairsToConnect.removeFirst()
+        val (b1, b2) = lastPair
+
+        val b1Circuit = circuits.firstOrNull { b1 in it }
+        val b2Circuit = circuits.firstOrNull { b2 in it }
+
+        when {
+            b1Circuit == null && b2Circuit == null -> circuits += mutableSetOf(b1, b2)
+
+            b1Circuit == b2Circuit -> Unit // already connected
+
+            b1Circuit != null && b2Circuit != null -> {
+                circuits.remove(b2Circuit)
+                b1Circuit.addAll(b2Circuit)
+            }
+
+            b1Circuit != null -> b1Circuit += b2
+            b2Circuit != null -> b2Circuit += b1
         }
+    } while (boxPairsToConnect.isNotEmpty() && circuits.size > 1)
 
-        val y = y.compareTo(other.y)
-        if (y != 0) {
-            return y
-        }
-
-        return x.compareTo(other.x)
-    }
-
-    override fun toString(): String {
-        return "$x,$y,$z"
-    }
+    return circuits to lastPair
 }
 
-private fun Vec3l.distanceTo(other: Vec3l): Float {
-    val x = (x - other.x) * (x - other.x)
-    val y = (y - other.y) * (y - other.y)
-    val z = (z - other.z) * (z - other.z)
-    return sqrt(x.toFloat() + y.toFloat() + z.toFloat())
+private fun calculateClosestPairs(
+    junctionBoxes: List<Vec3l>,
+): List<Pair<Vec3l, Vec3l>> {
+    val distance = mutableMapOf<Pair<Vec3l, Vec3l>, Float>()
+    junctionBoxes.forEach { j1 ->
+        junctionBoxes.forEach { j2 ->
+            if (j1 != j2) {
+                val pair = listOf(j1, j2).sorted().let { (p1, p2) -> p1 to p2 }
+                distance[pair] = j1.distanceTo(j2)
+            }
+        }
+    }
+    return distance.entries.sortedBy { it.value }.map { it.key }
 }
+
+private fun parseJunctionBoxes(input: Input): List<Vec3l> =
+    input.lines.map { it.split(',').map(String::toLong).let(::Vec3l) }

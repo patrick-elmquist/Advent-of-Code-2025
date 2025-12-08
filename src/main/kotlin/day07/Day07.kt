@@ -3,7 +3,7 @@ package day07
 import common.Input
 import common.day
 import common.grid
-import common.util.Point
+import common.util.Vec2i
 
 // answer #1: 1681
 // answer #2: 422102272495018
@@ -16,7 +16,7 @@ fun main() {
             val splitters = parseSplitters(input)
             val queue = mutableListOf(splitters.minBy { it.y })
 
-            val visited = mutableSetOf<Point>()
+            val visited = mutableSetOf<Vec2i>()
             while (queue.isNotEmpty()) {
                 val splitter = queue.removeFirst()
 
@@ -52,9 +52,9 @@ fun main() {
 }
 
 private fun countTimelinesRecursively(
-    splitter: Point,
-    splitters: List<Point>,
-    cache: MutableMap<Point, Long> = mutableMapOf(),
+    splitter: Vec2i,
+    splitters: List<Vec2i>,
+    cache: MutableMap<Vec2i, Long> = mutableMapOf(),
 ): Long = cache.getOrPut(splitter) {
     offsets
         .map { offset -> splitters.findSplitterBelow(splitter, offset) }
@@ -71,10 +71,10 @@ private fun countTimelinesRecursively(
         }
 }
 
-private fun List<Point>.findSplitterBelow(splitter: Point, offset: Int): Point? =
+private fun List<Vec2i>.findSplitterBelow(splitter: Vec2i, offset: Int): Vec2i? =
     firstOrNull { it.x == splitter.x + offset && it.y > splitter.y }
 
-private fun parseSplitters(input: Input): List<Point> =
+private fun parseSplitters(input: Input): List<Vec2i> =
     input.grid
         .filterValues { it == '^' }
         .keys

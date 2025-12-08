@@ -2,7 +2,7 @@ package day04
 
 import common.day
 import common.grid
-import common.util.Point
+import common.util.Vec2i
 import common.util.neighbors
 
 // answer #1: 1370
@@ -43,5 +43,5 @@ fun main() {
     }
 }
 
-private fun Map<Point, Char>.isRemovable(xy: Point): Boolean =
+private fun Map<Vec2i, Char>.isRemovable(xy: Vec2i): Boolean =
     xy.neighbors(diagonal = true).count { it in this } < 4

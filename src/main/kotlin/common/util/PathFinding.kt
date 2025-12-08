@@ -3,11 +3,11 @@ package common.util
 import java.util.PriorityQueue
 import kotlin.sequences.forEach
 
-fun Map<Point, Char>.findShortestPath(
-    start: Point,
-    end: Point,
+fun Map<Vec2i, Char>.findShortestPath(
+    start: Vec2i,
+    end: Vec2i,
     validTiles: Set<Char> = setOf('.'),
-): Pair<Int, List<Point>> {
+): Pair<Int, List<Vec2i>> {
     return findShortestPath(
         start,
         end,
@@ -16,19 +16,19 @@ fun Map<Point, Char>.findShortestPath(
     )!!
 }
 
-fun Map<Point, Char>.findShortestPath(
-    start: Point,
-    end: Point,
+fun Map<Vec2i, Char>.findShortestPath(
+    start: Vec2i,
+    end: Vec2i,
     validTiles: Set<Char> = setOf('.'),
-    defaultValue: Pair<Int, List<Point>>?,
-): Pair<Int, List<Point>>? {
-    val distances = mutableMapOf<Point, Int>().withDefault { Int.MAX_VALUE }
+    defaultValue: Pair<Int, List<Vec2i>>?,
+): Pair<Int, List<Vec2i>>? {
+    val distances = mutableMapOf<Vec2i, Int>().withDefault { Int.MAX_VALUE }
     distances[start] = 0
 
-    val queue = PriorityQueue<Pair<Point, List<Point>>>(compareBy { distances[it.first] })
+    val queue = PriorityQueue<Pair<Vec2i, List<Vec2i>>>(compareBy { distances[it.first] })
     queue.add(start to emptyList())
 
-    val visited = mutableSetOf<Point>()
+    val visited = mutableSetOf<Vec2i>()
     while (queue.isNotEmpty()) {
         val entry = queue.poll()
         val (point, path) = entry
