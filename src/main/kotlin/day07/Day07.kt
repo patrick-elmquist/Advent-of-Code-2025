@@ -23,6 +23,7 @@ fun main() {
                 if (splitter in visited) continue
                 visited += splitter
 
+
                 queue += offsets.mapNotNull { offset ->
                     splitters.findSplitterBelow(splitter, offset)
                 }

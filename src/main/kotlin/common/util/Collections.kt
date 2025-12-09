@@ -68,7 +68,7 @@ fun <T> Map<Vec2i, T>.minMax(block: (Map.Entry<Vec2i, T>) -> Int): IntRange {
 fun <K, V> unsafeMapOf(vararg pairs: Pair<K, V>): UnsafeMap<K, V> =
     UnsafeMap<K, V>(pairs.toMap().toMutableMap()).apply { putAll(pairs) }
 
-fun <K, V> Map<K,V>.asUnsafe() = unsafeMapOfAll(this)
+fun <K, V> Map<K, V>.asUnsafe() = unsafeMapOfAll(this)
 
 fun <K, V> unsafeMapOfAll(map: Map<K, V>): UnsafeMap<K, V> =
     UnsafeMap<K, V>(map.toMutableMap()).apply { putAll(map) }
