@@ -3,10 +3,9 @@ package day09
 import common.day
 import common.util.Vec2i
 import kotlin.math.abs
-import kotlin.math.max
 
 // answer #1: 4767418746
-// answer #2:
+// answer #2: 1461987144
 
 data class Line(val a: Vec2i, val b: Vec2i) {
     override fun toString(): String = "Line(${a.x},${a.y} - ${b.x},${b.y})"
@@ -15,15 +14,13 @@ data class Line(val a: Vec2i, val b: Vec2i) {
 fun main() {
     day(n = 9) {
         part1 { input ->
-            val points = input.lines.map { line ->
+            val tiles = input.lines.map { line ->
                 line.split(",").map { it.toInt() }.let(::Vec2i)
             }
 
-            points.maxOf { p1 ->
-                points.maxOf { p2 ->
-                    val w = abs(p1.x - p2.x) + 1
-                    val h = abs(p1.y - p2.y) + 1
-                    w.toLong() * h.toLong()
+             tiles.maxOf { p1 ->
+                tiles.maxOf { p2 ->
+                    area(p1, p2)
                 }
             }
         }
@@ -33,60 +30,48 @@ fun main() {
         }
 
         part2 { input ->
-            val points = input.lines.map { line -> line.split(",").map { it.toInt() }.let(::Vec2i) }
-            val lines = (points + points.first()).windowed(2) { (p1, p2) -> Line(p1, p2) }
+            val tiles = input.lines.map { line -> line.split(",").map { it.toInt() }.let(::Vec2i) }
+            val lines = (tiles + tiles.first()).windowed(2) { (p1, p2) -> Line(p1, p2) }
 
             var maxArea = Long.MIN_VALUE
-            for (i in points.indices) {
-                val p1 = points[i]
-                ((i + 1)..points.lastIndex).forEach { j ->
-                    val p2 = points[j]
+            for (i in tiles.indices) {
+                val p1 = tiles[i]
 
-                    val area = (abs(p2.x - p1.x).toLong() + 1) * (abs(p2.y - p1.y).toLong()+1)
-//                    println("$p1  $p2  $area ($maxArea)")
+                for (j in (i + 1)..tiles.lastIndex) {
+                    val p2 = tiles[j]
+
+                    val area = area(p1, p2)
                     if (area > maxArea) {
-                        val intersected = lines.any { line ->
-                            intersects(Line(p1, p2), line).also {
-                                if (it) {
-//                                    println("$p1  $p2  $line intersected")
-                                } else {
-//                                    println("not intersecting")
-                                }
-                            }
+                        val intersected = lines.none { line ->
+                            intersects(Line(p1, p2), line)
                         }
                         if (intersected) {
-//                            println("ignoring area")
-                        } else {
                             maxArea = area
                         }
                     }
                 }
             }
-            println(points)
-            println(lines)
-            println(maxArea)
-
             maxArea
-
         }
         verify {
-            expect result null
+            expect result 1461987144L
             run test 1 expect 24L
         }
     }
 }
 
-private fun intersects(l1: Line, l2: Line): Boolean {
-    val (l1mix, l1max) = minMax(l1.a.x, l1.b.x)
-    val (l1miy, l1may) = minMax(l1.a.y, l1.b.y)
-
-    val (l2mix, l2max) = minMax(l2.a.x, l2.b.x)
-    val (l2miy, l2may) = minMax(l2.a.y, l2.b.y)
-
-    return l2max > l1mix && l2mix < l1max && l2may > l1miy && l2miy < l1may;
+private fun intersects(line1: Line, line2: Line): Boolean {
+    val (l1MinX, l1MaxX) = sort(line1.a.x, line1.b.x)
+    val (l1MinY, l1MaxY) = sort(line1.a.y, line1.b.y)
+    val (l2MinX, l2MaxX) = sort(line2.a.x, line2.b.x)
+    val (l2MinY, l2MaxY) = sort(line2.a.y, line2.b.y)
+    return l2MaxX > l1MinX && l2MinX < l1MaxX && l2MaxY > l1MinY && l2MinY < l1MaxY;
 }
 
-private fun minMax(a: Int, b: Int): Pair<Int, Int> {
-    return if (a < b) a to b else b to a
-}
+private fun sort(a: Int, b: Int): Pair<Int, Int> = if (a < b) a to b else b to a
 
+private fun area(p1: Vec2i, p2: Vec2i): Long {
+    val w = abs(p1.x - p2.x) + 1
+    val h = abs(p1.y - p2.y) + 1
+    return w.toLong() * h.toLong()
+}
