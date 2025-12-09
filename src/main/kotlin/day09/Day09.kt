@@ -31,11 +31,11 @@ fun main() {
 
             var maxArea = Long.MIN_VALUE
             for (i in tiles.indices) {
-                val p1 = tiles[i]
+                val tile1 = tiles[i]
                 for (j in (i + 1)..tiles.lastIndex) {
-                    val p2 = tiles[j]
-                    val area = calculateArea(p1, p2)
-                    if (area > maxArea && lines.none { line -> line.intersectsWith(Line(p1, p2)) }) {
+                    val tile2 = tiles[j]
+                    val area = calculateArea(tile1, tile2)
+                    if (area > maxArea && lines.none { line -> line.intersectsWith(Line(tile1, tile2)) }) {
                         maxArea = area
                     }
                 }
