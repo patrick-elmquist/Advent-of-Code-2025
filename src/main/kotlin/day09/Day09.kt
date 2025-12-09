@@ -10,13 +10,10 @@ import kotlin.math.abs
 fun main() {
     day(n = 9) {
         part1 { input ->
-            val tiles = input.lines.map { line ->
-                line.split(",").map { it.toInt() }.let(::Vec2i)
-            }
-
-            tiles.maxOf { p1 ->
-                tiles.maxOf { p2 ->
-                    calculateArea(p1, p2)
+            val tiles = input.lines.map(::Vec2i)
+            tiles.maxOf { t1 ->
+                tiles.maxOf { t2 ->
+                    calculateArea(t1, t2)
                 }
             }
         }
@@ -26,16 +23,17 @@ fun main() {
         }
 
         part2 { input ->
-            val tiles = input.lines.map { line -> line.split(",").map { it.toInt() }.let(::Vec2i) }
-            val lines = (tiles + tiles.first()).windowed(2) { (p1, p2) -> Line(p1, p2) }
+            val tiles = input.lines.map(::Vec2i)
+
+            // add first again to complete the loop
+            val lines = (tiles + tiles.first()).windowed(2).map(::Line)
 
             var maxArea = Long.MIN_VALUE
-            for (i in tiles.indices) {
-                val tile1 = tiles[i]
+            for ((i, tile1) in tiles.withIndex()) {
                 for (j in (i + 1)..tiles.lastIndex) {
-                    val tile2 = tiles[j]
-                    val area = calculateArea(tile1, tile2)
-                    if (area > maxArea && lines.none { line -> line.intersectsWith(Line(tile1, tile2)) }) {
+                    val line = Line(tile1, tiles[j])
+                    val area = calculateArea(line.a, line.b)
+                    if (area > maxArea && lines.none { it.intersectsWith(line) }) {
                         maxArea = area
                     }
                 }
@@ -50,6 +48,8 @@ fun main() {
 }
 
 private data class Line(val a: Vec2i, val b: Vec2i) {
+    constructor(points: List<Vec2i>) : this(points[0], points[1])
+
     fun intersectsWith(other: Line): Boolean {
         val (minX, maxX) = sort(a.x, b.x)
         val (minY, maxY) = sort(a.y, b.y)

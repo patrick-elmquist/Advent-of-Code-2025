@@ -9,6 +9,8 @@ data class Vec2i(val x: Int, val y: Int): Comparable<Vec2i> {
 
     constructor(xy: List<Int>) : this(xy[0], xy[1])
 
+    constructor(xy: String) : this(xy.split(",").map(String::toInt))
+
     override fun compareTo(other: Vec2i): Int =
         compareValuesBy(this, other, { it.y }, { it.x })
 
