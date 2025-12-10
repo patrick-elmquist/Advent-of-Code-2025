@@ -15,13 +15,17 @@ inline operator fun String.not() {
 
 inline fun <T> T.out(): T = log()
 
+inline fun out(vararg items: Any?) {
+    items.joinToString().out()
+}
+
 inline fun <T> T.log(): T {
     if (loggingEnabled) println(this)
     return this
 }
 
 inline infix fun <T> T.log(msg: Any): T {
-    if (loggingEnabled)  println("$msg $this")
+    if (loggingEnabled) println("$msg $this")
     return this
 }
 
