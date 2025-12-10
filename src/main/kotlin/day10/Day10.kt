@@ -42,8 +42,6 @@ private fun solveWithZ3(
     joltageRequirements: List<Int>,
     buttons: List<Set<Int>>,
 ): Int {
-    val opt = ctx.mkOptimize()
-    val presses = ctx.mkIntConst("Presses")
     val buttonVars = buttons.indices.map { ctx.mkIntConst("Button_$it") }.toTypedArray()
 
     val countersToButtons = mutableMapOf<Int, MutableList<IntExpr>>()
@@ -53,6 +51,7 @@ private fun solveWithZ3(
         }
     }
 
+    val opt = ctx.mkOptimize()
     countersToButtons.entries.forEach { (counterIndex, counterButtons) ->
         val targetValue = ctx.mkInt(joltageRequirements[counterIndex])
         val sumOfButtonPresses = ctx.mkAdd(*counterButtons.toTypedArray()) as IntExpr
@@ -60,13 +59,12 @@ private fun solveWithZ3(
     }
 
     val zero = ctx.mkInt(0)
-    buttonVars.forEach { buttonVar ->
-        opt.Add(ctx.mkGe(buttonVar, zero))
-    }
+    buttonVars.forEach { buttonVar -> opt.Add(ctx.mkGe(buttonVar, zero)) }
 
     val sumOfAllButtonsVars = ctx.mkAdd(*buttonVars) as IntExpr
-    val totalPressesEq = ctx.mkEq(presses, sumOfAllButtonsVars)
-    opt.Add(totalPressesEq)
+
+    val presses = ctx.mkIntConst("Presses")
+    opt.Add(ctx.mkEq(presses, sumOfAllButtonsVars))
 
     opt.MkMinimize(presses)
     opt.Check()
