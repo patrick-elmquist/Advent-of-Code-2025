@@ -43,14 +43,13 @@ private fun solveWithZ3(
     buttons: List<Set<Int>>,
 ): Int {
     val opt = ctx.mkOptimize()
-    val presses = ctx.mkIntConst("presses")
-    val buttonVars = buttons.indices.map { ctx.mkIntConst("button$it") }.toTypedArray()
+    val presses = ctx.mkIntConst("Presses")
+    val buttonVars = buttons.indices.map { ctx.mkIntConst("Button_$it") }.toTypedArray()
 
     val countersToButtons = mutableMapOf<Int, MutableList<IntExpr>>()
-    buttons.indices.forEach { i ->
-        val buttonVar = buttonVars[i]
+    buttonVars.forEachIndexed { i, buttonVar ->
         for (flip in buttons[i]) {
-            countersToButtons.computeIfAbsent(flip) { mutableListOf() }.add(buttonVar)
+            countersToButtons.getOrPut(flip) { mutableListOf() }.add(buttonVar)
         }
     }
 
@@ -62,8 +61,7 @@ private fun solveWithZ3(
 
     val zero = ctx.mkInt(0)
     buttonVars.forEach { buttonVar ->
-        val nonNegative = ctx.mkGe(buttonVar, zero)
-        opt.Add(nonNegative)
+        opt.Add(ctx.mkGe(buttonVar, zero))
     }
 
     val sumOfAllButtonsVars = ctx.mkAdd(*buttonVars) as IntExpr
@@ -95,9 +93,9 @@ private fun fewestKeyPressesRequired(lights: String, switches: List<Set<Int>>): 
     )
 }
 
-data class State(val int: Int, val presses: Int)
+private data class State(val int: Int, val presses: Int)
 
-fun findMinPresses(
+private fun findMinPresses(
     target: Int,
     numbers: Set<Int>,
 ): Int {
@@ -146,4 +144,3 @@ private fun parseInput(input: Input) =
 
         Triple(lights, switches, joltage)
     }
-
