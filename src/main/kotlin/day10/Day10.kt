@@ -6,6 +6,7 @@ import com.microsoft.z3.IntNum
 import common.Input
 import common.day
 import java.util.PriorityQueue
+import kotlin.text.map
 
 // answer #1: 399
 // answer #2: 15631
@@ -13,10 +14,9 @@ import java.util.PriorityQueue
 fun main() {
     day(n = 10) {
         part1 { input ->
-            parseLightsSwitchesAndJoltage(input)
-                .sumOf { (lights, switches, _) ->
-                    fewestKeyPressesRequired(lights, switches)
-                }
+            parseInput(input).sumOf { (lights, switches, _) ->
+                fewestKeyPressesRequired(lights, switches)
+            }
         }
         verify {
             expect result 399
@@ -25,10 +25,9 @@ fun main() {
 
         part2 { input ->
             Context().use { context ->
-                parseLightsSwitchesAndJoltage(input)
-                    .sumOf { (_, switches, joltage) ->
-                        solveWithZ3(context, joltage, switches)
-                    }
+                parseInput(input).sumOf { (_, switches, joltage) ->
+                    solveWithZ3(context, joltage, switches)
+                }
             }
         }
         verify {
@@ -45,9 +44,7 @@ private fun solveWithZ3(
 ): Int {
     val opt = ctx.mkOptimize()
     val presses = ctx.mkIntConst("presses")
-    val buttonVars = buttons.indices.map {
-        ctx.mkIntConst("button$it")
-    }.toTypedArray()
+    val buttonVars = buttons.indices.map { ctx.mkIntConst("button$it") }.toTypedArray()
 
     val countersToButtons = mutableMapOf<Int, MutableList<IntExpr>>()
     buttons.indices.forEach { i ->
@@ -80,6 +77,9 @@ private fun solveWithZ3(
 }
 
 private fun fewestKeyPressesRequired(lights: String, switches: List<Set<Int>>): Int {
+    val lights = lights.map { if (it == '#') '1' else '0' }
+        .joinToString("")
+
     val value = Integer.parseInt(lights.reversed(), 2)
 
     val len = lights.length
@@ -95,49 +95,55 @@ private fun fewestKeyPressesRequired(lights: String, switches: List<Set<Int>>): 
     )
 }
 
-data class State(
-    val int: Int,
-    val presses: List<Int>,
-)
+data class State(val int: Int, val presses: Int)
 
 fun findMinPresses(
     target: Int,
     numbers: Set<Int>,
 ): Int {
-    val initialStates = numbers.map {
-        State(
-            int = it,
-            presses = mutableListOf(it),
-        )
-    }
-    val queue = PriorityQueue<State>(compareBy { it.presses.size })
-    queue.addAll(initialStates)
+    val queue = PriorityQueue<State>(compareBy { it.presses })
+    queue.addAll(numbers.map { State(int = it, presses = 1) })
 
     while (true) {
-        val state = queue.poll()!!
+        val state = queue.poll()
 
-        if (state.int == target) return state.presses.size
+        if (state.int == target) return state.presses
 
-        numbers.filter { it != state.presses.last() }
-            .forEach { n ->
-                queue.add(
-                    State(
-                        int = n xor state.int,
-                        presses = state.presses + n,
-                    ),
-                )
-            }
+        numbers.forEach { n ->
+            queue.add(
+                State(
+                    int = n xor state.int,
+                    presses = state.presses + 1,
+                ),
+            )
+        }
     }
 }
 
-private fun parseLightsSwitchesAndJoltage(input: Input) =
+private fun parseInput(input: Input) =
     input.lines.map { line ->
         val split = line.split(" ")
-        val lights = split.first().removeSurrounding("[", "]")
-            .map { if (it == '#') '1' else '0' }.joinToString("")
-        val joltage = split.last().removeSurrounding("{", "}").split(",").map(String::toInt)
-        val switches = split.drop(1).dropLast(1)
-            .map { it.drop(1).dropLast(1).split(",").map(String::toInt).toSet() }
+
+        val lights = split
+            .first()
+            .removeSurrounding("[", "]")
+
+        val switches = split
+            .drop(1)
+            .dropLast(1)
+            .map {
+                it.removeSurrounding("(", ")")
+                    .split(",")
+                    .map(String::toInt)
+                    .toSet()
+            }
+
+        val joltage = split
+            .last()
+            .removeSurrounding("{", "}")
+            .split(",")
+            .map(String::toInt)
+
         Triple(lights, switches, joltage)
     }
 
