@@ -3,26 +3,20 @@ package day10
 import com.microsoft.z3.Context
 import com.microsoft.z3.IntExpr
 import com.microsoft.z3.IntNum
-import com.microsoft.z3.Status
+import common.Input
 import common.day
 import java.util.PriorityQueue
 
 // answer #1: 399
-// answer #2:
+// answer #2: 15631
 
 fun main() {
     day(n = 10) {
         part1 { input ->
-            input.lines.sumOf {
-                val split = it.split(" ")
-                val lights = split.first().removeSurrounding("[", "]")
-                    .map { if (it == '#') '1' else '0' }.joinToString("")
-                val switches = split.drop(1).dropLast(1)
-                    .map { it.drop(1).dropLast(1).split(",").map { it.toInt() } }
-
-                fewestKeyPressesRequired(lights, switches)
-            }
-
+            parseLightsSwitchesAndJoltage(input)
+                .sumOf { (lights, switches, _) ->
+                    fewestKeyPressesRequired(lights, switches)
+                }
         }
         verify {
             expect result 399
@@ -30,139 +24,62 @@ fun main() {
         }
 
         part2 { input ->
-            input.lines
-//                .take(1) // TODO REMOVE BEFORE REAL RUN
-                .sumOf {
-
-                    val split = it.split(" ")
-                    val joltage =
-                        split.last().removeSurrounding("{", "}").split(",").map { it.toInt() }
-                    val switches = split.drop(1).dropLast(1)
-                        .map { it.drop(1).dropLast(1).split(",").map { it.toInt() }.toSet() }
-
-                    println(it)
-                    solveWithZ3(joltage, switches)
-                }
+            Context().use { context ->
+                parseLightsSwitchesAndJoltage(input)
+                    .sumOf { (_, switches, joltage) ->
+                        solveWithZ3(context, joltage, switches)
+                    }
+            }
         }
         verify {
-            expect result null
+            expect result 15631
             run test 1 expect 33
         }
     }
 }
 
 private fun solveWithZ3(
-    target: List<Int>,
+    ctx: Context,
+    joltageRequirements: List<Int>,
     buttons: List<Set<Int>>,
 ): Int {
-    val context = Context()
-    val optimize = context.mkOptimize()
-    val presses = context.mkIntConst("presses")
-
+    val opt = ctx.mkOptimize()
+    val presses = ctx.mkIntConst("presses")
     val buttonVars = buttons.indices.map {
-        context.mkIntConst("button$it")
+        ctx.mkIntConst("button$it")
     }.toTypedArray()
 
-    val countersToButtons = mutableMapOf<Int, List<IntExpr>>()
-
+    val countersToButtons = mutableMapOf<Int, MutableList<IntExpr>>()
     buttons.indices.forEach { i ->
         val buttonVar = buttonVars[i]
         for (flip in buttons[i]) {
-            countersToButtons.computeIfAbsent(flip) { mutableListOf(buttonVar) }
+            countersToButtons.computeIfAbsent(flip) { mutableListOf() }.add(buttonVar)
         }
     }
 
-    countersToButtons.entries.forEach { entry ->
-        val (counterIndex, counterButtons) = entry
-        val targetValue = context.mkInt(target[counterIndex])
-        val buttonPressesArray: Array<IntExpr> = counterButtons.toTypedArray().ifEmpty { emptyArray() }
-        val sumOfButtonPresses = context.mkAdd(*buttonPressesArray) as IntExpr
-        val equation = context.mkEq(targetValue, sumOfButtonPresses)
-        optimize.Add(equation)
+    countersToButtons.entries.forEach { (counterIndex, counterButtons) ->
+        val targetValue = ctx.mkInt(joltageRequirements[counterIndex])
+        val sumOfButtonPresses = ctx.mkAdd(*counterButtons.toTypedArray()) as IntExpr
+        opt.Add(ctx.mkEq(targetValue, sumOfButtonPresses))
     }
 
-    val zero = context.mkInt(0)
+    val zero = ctx.mkInt(0)
     buttonVars.forEach { buttonVar ->
-        val nonNegative = context.mkGe(buttonVar, zero)
-        optimize.Add(nonNegative)
+        val nonNegative = ctx.mkGe(buttonVar, zero)
+        opt.Add(nonNegative)
     }
 
-    val sumOfAllButtonsVars = context.mkAdd(*buttonVars) as IntExpr
-    val totalPressesEq = context.mkEq(presses, sumOfAllButtonsVars)
-    optimize.Add(totalPressesEq)
+    val sumOfAllButtonsVars = ctx.mkAdd(*buttonVars) as IntExpr
+    val totalPressesEq = ctx.mkEq(presses, sumOfAllButtonsVars)
+    opt.Add(totalPressesEq)
 
-    optimize.MkMinimize(presses)
+    opt.MkMinimize(presses)
+    opt.Check()
 
-    val status = optimize.Check()
-
-    return if (status == Status.SATISFIABLE) {
-        val model = optimize.model
-        val outputValue = model.evaluate(presses, false) as (IntNum)
-        outputValue.getInt()
-    } else if (status == Status.UNSATISFIABLE) {
-        error("Unsatisfiable")
-    } else {
-        error("Unknown $status")
-    }
+    return (opt.model.evaluate(presses, false) as (IntNum)).getInt()
 }
 
-
-data class State2(
-    val joltage: List<Int>,
-    val presses: Int,
-)
-
-private fun solve(
-    target: List<Int>,
-    switches: List<Set<Int>>,
-): Int {
-    val len = target.size
-    val initialState = State2(
-        joltage = target,
-        presses = 0,
-    )
-
-    val queue = PriorityQueue<State2>(compareBy { it.presses })
-    queue.add(initialState)
-
-    println()
-    println("RUNNING")
-    println("Switches: $switches")
-    println("Target: $target")
-    var loops = 0L
-
-    while (true) {
-        loops++
-        val state = queue.poll()!!
-//        println(state)
-
-        if (state.joltage.any { it < 0 }) continue
-        if (state.joltage.sum() == 0) {
-            println("presses: ${state.presses} loops: $loops")
-            return state.presses
-        }
-
-        switches.forEach { wires ->
-            val next = State2(
-                joltage = state.joltage.mapIndexed { index, j ->
-                    if (index in wires) {
-                        j - 1
-                    } else {
-                        j
-                    }
-                },
-                presses = state.presses + 1,
-            )
-            if (next !in queue) {
-                queue.add(next)
-            }
-            queue.add(next)
-        }
-    }
-}
-
-
-private fun fewestKeyPressesRequired(lights: String, switches: List<List<Int>>): Int {
+private fun fewestKeyPressesRequired(lights: String, switches: List<Set<Int>>): Int {
     val value = Integer.parseInt(lights.reversed(), 2)
 
     val len = lights.length
@@ -212,3 +129,15 @@ fun findMinPresses(
             }
     }
 }
+
+private fun parseLightsSwitchesAndJoltage(input: Input) =
+    input.lines.map { line ->
+        val split = line.split(" ")
+        val lights = split.first().removeSurrounding("[", "]")
+            .map { if (it == '#') '1' else '0' }.joinToString("")
+        val joltage = split.last().removeSurrounding("{", "}").split(",").map(String::toInt)
+        val switches = split.drop(1).dropLast(1)
+            .map { it.drop(1).dropLast(1).split(",").map(String::toInt).toSet() }
+        Triple(lights, switches, joltage)
+    }
+
