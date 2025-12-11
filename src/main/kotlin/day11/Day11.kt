@@ -1,5 +1,6 @@
 package day11
 
+import common.Input
 import common.day
 
 // answer #1: 772
@@ -8,13 +9,9 @@ import common.day
 fun main() {
     day(n = 11) {
         part1 { input ->
-            val map = mutableMapOf<String, List<String>>()
-            input.lines.forEach { line ->
-                val (start, ends) = line.split(": ").let { (a, b) -> a to b.split(" ") }
-                map[start] = ends
-            }
+            val connectionMap = parseMap(input)
 
-            findPaths(start = "you", target = "out", map = map)
+            connectionMap.findPaths(start = "you", target = "out")
         }
         verify {
             expect result 772L
@@ -22,15 +19,13 @@ fun main() {
         }
 
         part2 { input ->
-            val map = mutableMapOf<String, List<String>>()
-            input.lines.forEach { line ->
-                val (start, ends) = line.split(": ").let { (a, b) -> a to b.split(" ") }
-                map[start] = ends
-            }
+            val connectionMap = parseMap(input)
+
             // looking at the graph, the order is svr -> fft -> dac -> out
-            val pathsFromSvrToFft = findPaths(start = "svr", target = "fft", map = map)
-            val pathsFromFftToDac = findPaths(start = "fft", target = "dac", map = map)
-            val pathsFromDacToOut = findPaths(start = "dac", target = "out", map = map)
+            val pathsFromSvrToFft = connectionMap.findPaths(start = "svr", target = "fft")
+            val pathsFromFftToDac = connectionMap.findPaths(start = "fft", target = "dac")
+            val pathsFromDacToOut = connectionMap.findPaths(start = "dac", target = "out")
+
             pathsFromSvrToFft * pathsFromFftToDac * pathsFromDacToOut
         }
         verify {
@@ -40,19 +35,21 @@ fun main() {
     }
 }
 
-private fun findPaths(
+private fun Map<String, List<String>>.findPaths(
     start: String,
     target: String,
-    map: Map<String, List<String>>,
     cache: MutableMap<String, Long> = mutableMapOf(),
-): Long {
-    return cache.getOrPut(start) {
-        map.getValue(start).sumOf { end ->
-            if (end == target) {
-                1L
-            } else {
-                findPaths(end, target, map, cache)
-            }
+): Long = cache.getOrPut(start) {
+    getValue(start).sumOf { next ->
+        when (next) {
+            target -> 1L
+            "out" -> 0L
+            else -> this.findPaths(next, target, cache)
         }
     }
 }
+
+private fun parseMap(input: Input): Map<String, List<String>> =
+    input.lines.associate { line ->
+        line.split(": ").let { (start, ends) -> start to ends.split(" ") }
+    }
