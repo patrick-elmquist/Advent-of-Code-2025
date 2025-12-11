@@ -9,9 +9,9 @@ import common.day
 fun main() {
     day(n = 11) {
         part1 { input ->
-            val connectionMap = parseMap(input)
+            val map = parseConnectionsMap(input)
 
-            connectionMap.findPaths(start = "you", target = "out")
+            map.findPaths(start = "you", target = "out")
         }
         verify {
             expect result 772L
@@ -19,14 +19,14 @@ fun main() {
         }
 
         part2 { input ->
-            val connectionMap = parseMap(input)
+            val map = parseConnectionsMap(input)
 
             // looking at the graph, the order is svr -> fft -> dac -> out
-            val pathsFromSvrToFft = connectionMap.findPaths(start = "svr", target = "fft")
-            val pathsFromFftToDac = connectionMap.findPaths(start = "fft", target = "dac")
-            val pathsFromDacToOut = connectionMap.findPaths(start = "dac", target = "out")
-
-            pathsFromSvrToFft * pathsFromFftToDac * pathsFromDacToOut
+            listOf(
+                map.findPaths(start = "svr", target = "fft"),
+                map.findPaths(start = "fft", target = "dac"),
+                map.findPaths(start = "dac", target = "out"),
+            ).reduce(Long::times)
         }
         verify {
             expect result 423227545768872L
@@ -44,12 +44,12 @@ private fun Map<String, List<String>>.findPaths(
         when (next) {
             target -> 1L
             "out" -> 0L
-            else -> this.findPaths(next, target, cache)
+            else -> findPaths(next, target, cache)
         }
     }
 }
 
-private fun parseMap(input: Input): Map<String, List<String>> =
+private fun parseConnectionsMap(input: Input): Map<String, List<String>> =
     input.lines.associate { line ->
         line.split(": ").let { (start, ends) -> start to ends.split(" ") }
     }
