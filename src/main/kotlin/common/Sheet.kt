@@ -36,6 +36,7 @@ class ConfigBuilder(private val day: Int) {
     val expect: ConfigBuilder get() = this
 
     private var ignore: Boolean = false
+    private var ignoreTests: Boolean = false
     private var breakAfterTest: Boolean = false
 
     private var expectedResult: Any? = null
@@ -43,6 +44,10 @@ class ConfigBuilder(private val day: Int) {
 
     fun ConfigBuilder.ignore() {
         ignore = true
+    }
+
+    fun ConfigBuilder.ignoreTests() {
+        ignoreTests = true
     }
 
     fun ConfigBuilder.breakAfterTest() {
@@ -73,6 +78,7 @@ class ConfigBuilder(private val day: Int) {
         expected = expectedResult,
         tests = tests.toList(),
         ignore = ignore,
+        ignoreTests = ignoreTests,
         breakAfterTest = breakAfterTest,
     )
 }

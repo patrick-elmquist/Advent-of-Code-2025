@@ -11,6 +11,7 @@ data class Config(
     val expected: Any?,
     val tests: List<Test>,
     val ignore: Boolean,
+    val ignoreTests: Boolean,
     val breakAfterTest: Boolean,
 )
 

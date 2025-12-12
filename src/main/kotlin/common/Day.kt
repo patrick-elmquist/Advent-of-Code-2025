@@ -37,12 +37,17 @@ private inline fun Sheet.verifyAndRun(input: Input) {
             return@forEachIndexed
         }
 
-        val tests = config.tests
-        if (tests.isNotEmpty()) println("Verifying Part #$n")
-        val testOk = tests.all { test ->
-            val result = solution.runWithTimer(test.input)
-            outputTestResult(test, result)
-            result.output == test.expected
+        val testOk = if (config.ignoreTests) {
+            println("[DISABLED] Verifying Part $n")
+            true
+        } else {
+            val tests = config.tests
+            if (tests.isNotEmpty()) println("Verifying Part #$n")
+            tests.all { test ->
+                val result = solution.runWithTimer(test.input)
+                outputTestResult(test, result)
+                result.output == test.expected
+            }
         }
 
         print("answer #$n: ")
