@@ -13,17 +13,29 @@ fun main() {
         part1 { input ->
             val lines = input.lines.sliceByBlankLine()
             val shapes = getShapes(lines.dropLast(1))
-            lines.last().count {
-                val split = it.split(": ")
-                val (width, height) = split[0].split("x").map { it.toInt() }
-                val numbers = split[1].split(" ").map { it.toInt() }
-                hasSolution(
-                    width = width,
-                    height = height,
-                    shapes = numbers,
-                    allShapes = shapes,
-                )
-            }
+            lines.last()
+                .drop(2)
+                .take(1)
+                .count { line ->
+                    val split = line.split(": ")
+                    val (width, height) = split[0].split("x").map { it.toInt() }
+                    val numbers =
+                        split[1].split(" ").map { it.toInt() }.flatMapIndexed { index, i ->
+                            if (i == 0) {
+                                emptyList()
+                            } else {
+                                List(i) { index }
+                            }
+                        }
+                    hasSolution(
+                        width = width,
+                        height = height,
+                        requiredShapes = numbers,
+                        shapes = shapes,
+                    ).also {
+                        println("checking $line result:$it")
+                    }
+                }
         }
         verify {
             expect result null
@@ -43,21 +55,73 @@ fun main() {
 private fun hasSolution(
     width: Int,
     height: Int,
-    shapes: List<Int>,
-    allShapes: List<Set<Set<Vec2i>>>,
+    requiredShapes: List<Int>,
+    shapes: List<Set<List<Vec2i>>>,
+    visited: Set<Vec2i> = setOf(),
 ): Boolean {
+    println()
+    out(requiredShapes)
+    draw(width, height, visited)
+    if (requiredShapes.isEmpty()) return true
+    if (visited.size >= width * height) return false
 
+    var next = findNextFree(width, height, visited) ?: return false
+    val localVisited = visited.toMutableSet()
+    do {
+        val anyMatch = requiredShapes.any { shapeIndex ->
+            shapes[shapeIndex]
+                .map { variation -> translate(variation, next) }
+                .filter { variation -> variation.all { it !in localVisited && it.x >= 0 && it.x < width && it.y >= 0 && it.y < height } }
+                .any { variation ->
+                    hasSolution(
+                        width = width,
+                        height = height,
+                        shapes = shapes,
+                        requiredShapes = requiredShapes - shapeIndex,
+                        visited = localVisited + variation,
+                    )
+                }
+        }
 
-
-
-
-    return TODO()
+        if (anyMatch) return true
+        localVisited += next
+        next = findNextFree(width, height, localVisited) ?: return false
+        out("next:", next)
+    } while (true)
 }
 
-private fun getShapes(lines: List<List<String>>): List<Set<Set<Vec2i>>> {
-    val shapes = List(lines.drop(1).size) { mutableSetOf<Set<Vec2i>>() }
+private fun draw(
+    width: Int,
+    height: Int,
+    visited: Set<Vec2i>,
+) {
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            print(if (Vec2i(x, y) in visited) '#' else '.')
+        }
+        println()
+    }
+}
+
+private fun translate(shape: List<Vec2i>, offset: Vec2i): List<Vec2i> {
+    return shape.map { it + offset }
+}
+
+private fun findNextFree(
+    width: Int,
+    height: Int,
+    visited: Set<Vec2i>,
+): Vec2i? =
+    (0 until height).firstNotNullOfOrNull { y ->
+        (0 until width).firstNotNullOfOrNull { x ->
+            Vec2i(x, y).takeIf { it !in visited }
+        }
+    }
+
+private fun getShapes(lines: List<List<String>>): List<Set<List<Vec2i>>> {
+    val shapes = List(lines.size) { mutableSetOf<List<Vec2i>>() }
     lines.forEachIndexed { index, strings ->
-        var shape = mutableSetOf<Vec2i>()
+        val shape = mutableSetOf<Vec2i>()
         strings.drop(1)
             .forEachIndexed { y, line ->
                 line.forEachIndexed { x, ch ->
@@ -67,24 +131,25 @@ private fun getShapes(lines: List<List<String>>): List<Set<Set<Vec2i>>> {
                 }
             }
 
-        val uniqueVariations = mutableSetOf<Set<Vec2i>>()
+        var original = shape.toList()
+        val uniqueVariations = mutableSetOf<List<Vec2i>>()
         repeat(4) {
-            uniqueVariations.add(shape.toSet())
-            uniqueVariations.add(flip(shape).toSet())
+            uniqueVariations.add(original)
+            uniqueVariations.add(flip(original))
 
             // Rotate for the next iteration
-            shape = rotate90(shape).toMutableSet()
+            original = rotate90(original)
         }
 
-        shapes[index] += uniqueVariations
+        shapes[index] += uniqueVariations.map { it.sorted() }
     }
     return shapes
 }
 
-private fun rotate90(points: Set<Vec2i>): Set<Vec2i> {
-    return points.map { (x, y) -> Vec2i(y, 2 - x) }.toSet()
+private fun rotate90(points: List<Vec2i>): List<Vec2i> {
+    return points.map { (x, y) -> Vec2i(y, 2 - x) }
 }
 
-private fun flip(points: Set<Vec2i>): Set<Vec2i> {
-    return points.map { (y, x) -> Vec2i(y, 2 - x) }.toSet()
+private fun flip(points: List<Vec2i>): List<Vec2i> {
+    return points.map { (y, x) -> Vec2i(y, 2 - x) }
 }
