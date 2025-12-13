@@ -12,7 +12,9 @@ fun main() {
         part1 { input ->
             val lines = input.lines.sliceByBlankLine()
             val shapes = getShapes(lines.dropLast(1))
-            lines.last().count { line ->
+            lines.last()
+                .parallelStream()
+                .map { line ->
                     val split = line.split(": ")
                     val (width, height) = split[0].split("x").map { it.toInt() }
                     val numbers =
@@ -30,17 +32,18 @@ fun main() {
                         shapes[shapeIndex].first().size
                     }
                     if (availableArea < neededArea) {
-                        false
+                        0
                     } else {
                         hasSolution(
                             width = width,
                             height = height,
                             requiredShapes = numbers,
                             shapes = shapes,
-                        )
+                        ).let { solution -> if (solution) 1 else 0 }
                     }
 
                 }
+                .reduce(0, Int::plus)
         }
         verify {
             expect result 536
@@ -65,6 +68,12 @@ private fun hasSolution(
     used: Map<Vec2i, Char> = mapOf(),
 ): Boolean {
     if (requiredShapes.isEmpty()) return true
+
+    val neededArea = requiredShapes.sumOf { shapeIndex ->
+        shapes[shapeIndex].first().size
+    }
+    val availableArea = width * height - visited.size
+    if (neededArea > availableArea) return false
 
     var next: Vec2i
     val localVisited = visited.toMutableSet()
@@ -139,4 +148,4 @@ private fun translate(shape: List<Vec2i>, offset: Vec2i): List<Vec2i> {
 
 private fun rotate90(points: List<Vec2i>): List<Vec2i> = points.map { (x, y) -> Vec2i(y, 2 - x) }
 
-private fun flip(points: List<Vec2i>): List<Vec2i> = points.map { (y, x) -> Vec2i(y, 2 - x) }
+private fun flip(points: List<Vec2i>): List<Vec2i> = points.map { (x, y) -> Vec2i(x, 2 - y) }
